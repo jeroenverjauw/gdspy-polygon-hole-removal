@@ -38,15 +38,15 @@ def subtract_layer(cell, old_layer, new_layer, box, keep=False):
     return result
 
 def box(cell)
-    polygons = topcell.get_polygons(by_spec = False)
-    for p in polygons:
-
+    areas = topcell.area(cell,by_spec = True)
+    print(areas)
 
 data = dict()
 
 
 for topcell in gdsii.top_level():
     box = box(topcell)
+
     polygons = topcell.get_polygons(by_spec = True)
 
     print(box)
