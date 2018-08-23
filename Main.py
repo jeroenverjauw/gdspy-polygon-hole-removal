@@ -5,7 +5,7 @@ from tkinter import filedialog
 gdsii = gdspy.GdsLibrary()
 gdspy.current_library = gdsii
 
-gdsii.read_gds("F:\SWMAJ-MEC_HFSS_design.gds")
+gdsii.read_gds("")
 
 def subtract_layer(cell, old_layer, new_layer, box, keep=False):
     """
@@ -37,11 +37,18 @@ def subtract_layer(cell, old_layer, new_layer, box, keep=False):
 
     return result
 
+def box(cell)
+    polygons = topcell.get_polygons(by_spec = False)
+    for p in polygons:
+
+
 data = dict()
 
+
 for topcell in gdsii.top_level():
+    box = box(topcell)
     polygons = topcell.get_polygons(by_spec = True)
-    box = polygons[(20,0)]
+
     print(box)
     for i in polygons:
 #        print(i)
