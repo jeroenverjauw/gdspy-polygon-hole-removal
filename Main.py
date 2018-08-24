@@ -22,7 +22,7 @@ def tessellate(cell, old_layer, new_layer, boxlayer, keep=False):
         cell with inverted new layer and removed old layer
     """
 
-    subtr = []
+    mask = []
     layers = cell.get_polygons(by_spec=True)
     print(layers)
     polygons = layers[old_layer]
@@ -33,10 +33,10 @@ def tessellate(cell, old_layer, new_layer, boxlayer, keep=False):
     print(len(polygons))
 
     for p in polygons:
-        subtr.append(gdspy.Polygon(p))
+        mask.append(gdspy.Polygon(p))
 
     cell.remove_polygons(lambda pts, layer, datatype:layer == old_layer[0])
-    result = gdspy.fast_boolean(box, subtr, 'and', max_points=5, layer=old_layer[0])
+    result = gdspy.fast_boolean(box, mask, 'and', max_points=5, layer=old_layer[0])
     # for p in polygons:
     #     result = gdspy.fast_boolean(result, gdspy.Polygon(p), 'and',max_points=5,layer = old_layer[0])
     # #
