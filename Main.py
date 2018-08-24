@@ -5,46 +5,31 @@ from tkinter import filedialog
 gdsii = gdspy.GdsLibrary()
 gdspy.current_library = gdsii
 
-gdsii.read_gds("C:/Users/jeroenverjauw/Desktop/SWMAJ-MEC_HFSS_design.gds")
+gdsii.read_gds("C:/Users/jeroen verjauw/Desktop/SWMAJ-MEC_HFSS_design.gds")
 
-def tessellate(cell, old_layer, new_layer, boxlayer, keep=False):
+def tessellate(cell, lyr):
     """
     within a cell, an old layer is subtracted from the chip size, and is written to the new layer
 
     Args:
         cell - gdspy cell
-        old_layer - old layer name
-        new_layer - new layer name
-        specs - dictionary with all parameters
-        keep - (Default: False) keep neg layer
+        lyr - layer name
 
     Return:
         cell with inverted new layer and removed old layer
     """
 
     mask = []
-    layers = cell.get_polygons(by_spec=True)
-    print(layers)
-    polygons = layers[old_layer]
-    # print(layers.keys())
-    box = boxlayer
-    result = boxlayer
-    print(old_layer)
-    print(len(polygons))
+    polygons = cell.get_polygons(by_spec=True)[lyr]
+    box_coord = topcell.get_bounding_box()
+    bbox = gdspy.Rectangle(box_coord[0],box_coord[1])
 
     for p in polygons:
         mask.append(gdspy.Polygon(p))
 
-    cell.remove_polygons(lambda pts, layer, datatype:layer == old_layer[0])
-    result = gdspy.fast_boolean(box, mask, 'and', max_points=5, layer=old_layer[0])
-    # for p in polygons:
-    #     result = gdspy.fast_boolean(result, gdspy.Polygon(p), 'and',max_points=5,layer = old_layer[0])
-    # #
-    # cell.remove_polygons(lambda pts, layer, datatype:layer == old_layer[0])
-    # # cell.remove_polygons(lambda pts, layer, datatype: layer == int(old_layer[0])) if keep == False else None
-
+    cell.remove_polygons(lambda pts, layer, datatype:layer == lyr[0])
+    result = gdspy.fast_boolean(bbox, mask, 'and', max_points=5, layer=lyr[0])
     cell.add(result)
-    # return (result)
 
 def box(cell):
     """
@@ -71,13 +56,10 @@ def box(cell):
 
 
 for topcell in gdsii.top_level():
-    box = box(topcell)
-    box = topcell.get_bounding_box()
-    print(box)
-    polygons = topcell.get_polygons(by_spec = True)
-    for i in polygons:
-        print(i)
-        tessellate(topcell,i,i,box)
+    layers = topcell.get_polygons(by_spec = True)
+    for l in layers:
+        print(l)
+        tessellate(topcell,l)
 
     gdspy.write_gds('test2.gds')
     gdspy.LayoutViewer(cells = topcell, depth=len(topcell.get_dependencies(recursive = True)))
