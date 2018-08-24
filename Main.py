@@ -72,6 +72,7 @@ def box(cell):
 
 for topcell in gdsii.top_level():
     box = box(topcell)
+    box = topcell.get_bounding_box()
     print(box)
     polygons = topcell.get_polygons(by_spec = True)
     for i in polygons:
