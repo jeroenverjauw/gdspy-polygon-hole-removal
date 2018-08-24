@@ -22,7 +22,7 @@ def tessellate(cell, old_layer, new_layer, boxlayer, keep=False):
         cell with inverted new layer and removed old layer
     """
 
-
+    subtr = []
     layers = cell.get_polygons(by_spec=True)
     print(layers)
     polygons = layers[old_layer]
@@ -32,12 +32,16 @@ def tessellate(cell, old_layer, new_layer, boxlayer, keep=False):
     print(old_layer)
     print(len(polygons))
 
-
     for p in polygons:
-        result = gdspy.fast_boolean(result, gdspy.Polygon(p), 'and',max_points=5,layer = old_layer[0])
-    #
+        subtr.append(gdspy.Polygon(p))
+
     cell.remove_polygons(lambda pts, layer, datatype:layer == old_layer[0])
-    # cell.remove_polygons(lambda pts, layer, datatype: layer == int(old_layer[0])) if keep == False else None
+    result = gdspy.fast_boolean(box, subtr, 'and', max_points=5, layer=old_layer[0])
+    # for p in polygons:
+    #     result = gdspy.fast_boolean(result, gdspy.Polygon(p), 'and',max_points=5,layer = old_layer[0])
+    # #
+    # cell.remove_polygons(lambda pts, layer, datatype:layer == old_layer[0])
+    # # cell.remove_polygons(lambda pts, layer, datatype: layer == int(old_layer[0])) if keep == False else None
 
     cell.add(result)
     # return (result)
@@ -64,12 +68,6 @@ def box(cell):
             return polygons[k]
     print('bounding box is not defined properly: a single rectangle is required')
     return None
-
-
-
-
-
-data = dict()
 
 
 for topcell in gdsii.top_level():
