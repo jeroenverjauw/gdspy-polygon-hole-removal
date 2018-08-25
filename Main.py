@@ -8,7 +8,7 @@ gdspy.current_library = gdsii
 gdsii.read_gds("C:/Users/jeroenverjauw/Desktop/SWMAJ-MEC_HFSS_design.gds")
 
 
-def invert_layer(cell,lyr):
+def invert_layer(cell,lyr,keep = False):
 
     mask = []
     polygons = cell.get_polygons(by_spec=True)[lyr]
@@ -17,16 +17,28 @@ def invert_layer(cell,lyr):
 
     for p in polygons:
         mask.append(gdspy.Polygon(p))
-    cell.remove_polygons(lambda pts, layer, datatype:layer == lyr[0])
-    result = ((gdspy.fast_boolean(bbox, mask, 'not',layer=lyr[0])))
+    cell.remove_polygons(lambda pts, layer, datatype:layer == lyr[0]) if keep is False else None
+    result = gdspy.fast_boolean(bbox, mask, 'not',layer=lyr[0])
     return result
 
-    # return gdspy.Polygon(result.polygons)
+def hole(cell,lyr):
+    inv = invert_layer(topcell,lyr,keep = True)
+    box_coord = cell.get_bounding_box()
+    if inv is not None:
+        bbox = []
+        for p in inv.polygons:
+            bbox.append(gdspy.Polygon(p).get_bounding_box())
+        print('number of bboxes: {0}'.format(len(bbox)))
+        # 1 coordinaat moet op de rand liggen
+        if any((coord[0][0] > box_coord[0][0] and coord[0][1] >  box_coord[0][1]) and (coord[1][0] < box_coord[1][0] and coord[1][1] <  box_coord[1][1]) for coord in bbox):
+            print(lyr)
+            return True
+        # check
+        # elif True:
 
+    return False
 
-
-
-def tessellate(cell, lyr=None):
+def tessellate(cell,i=199, lyr=None):
     """
     within a cell, an old layer is subtracted from the chip size, and is written to the new layer
 
@@ -42,7 +54,13 @@ def tessellate(cell, lyr=None):
     if lyr is None:
         layers = cell.get_polygons(by_spec = True)
         for l in layers:
-            tessellate(cell,l)
+            i = 33
+            test = hole(cell,l)
+            while test:
+                tessellate(cell,i,l)
+                i=i-1
+                print(i)
+                test = hole(cell,l)
         return None
 
     polygons = cell.get_polygons(by_spec=True)[lyr]
@@ -53,27 +71,18 @@ def tessellate(cell, lyr=None):
         mask.append(gdspy.Polygon(p))
 
     cell.remove_polygons(lambda pts, layer, datatype:layer == lyr[0])
-    result = gdspy.fast_boolean(bbox, mask, 'and', max_points=5, layer=lyr[0])
+    result = gdspy.fast_boolean(bbox, mask, 'and', max_points=i, layer=lyr[0])
+    print(len(result.polygons))
     cell.add(result)
+    gdspy.LayoutViewer()
 
 
 
 for topcell in gdsii.top_level():
-    # tessellate(topcell)
-    box_coord = topcell.get_bounding_box()
     layers = topcell.get_polygons(by_spec = True)
     for l in layers:
-        inv = invert_layer(topcell,l)
-        if (inv) is not None:
-            # print(box_coord[0][0],box_coord[1])
-            bbox = []
-            for p in inv.polygons:
-                bbox.append(gdspy.Polygon(p).get_bounding_box())
-            # 1 coordinaat moet op de rand liggen
-            if any((coord[0][0] > box_coord[0][0] and coord[0][1] >  box_coord[0][1]) and (coord[1][0] < box_coord[1][0] and coord[1][1] <  box_coord[1][1]) for coord in bbox):
-                  print(l)
-            # else we need to test a few other things!
-
+        if hole(topcell,l):
+            tessellate(topcell,l)
 
 
     gdspy.write_gds('test2.gds')
