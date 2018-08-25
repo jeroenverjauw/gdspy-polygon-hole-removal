@@ -22,20 +22,36 @@ def invert_layer(cell,lyr,keep = False):
     return result
 
 def hole(cell,lyr):
+
+
+
     inv = invert_layer(topcell,lyr,keep = True)
     box_coord = cell.get_bounding_box()
     if inv is not None:
         bbox = []
-        for p in inv.polygons:
-            bbox.append(gdspy.Polygon(p).get_bounding_box())
-        print('number of bboxes: {0}'.format(len(bbox)))
-        # 1 coordinaat moet op de rand liggen
-        if any((coord[0][0] > box_coord[0][0] and coord[0][1] >  box_coord[0][1]) and (coord[1][0] < box_coord[1][0] and coord[1][1] <  box_coord[1][1]) for coord in bbox):
-            print(lyr)
-            return True
-        # check
-        # elif True:
-
+        holes = []
+        # [holes.append(p) for p in inv.polygons]
+        [bbox.append(gdspy.Polygon(p).get_bounding_box()) for p in inv.polygons]
+        # print('number of bboxes: {0}'.format(len(bbox)))
+        # print('number of holes: {0}'.format(len(holes)))
+        # # 1 coordinaat moet op de rand liggen
+        # if any((coord[0][0] > box_coord[0][0] and coord[0][1] >  box_coord[0][1]) and (coord[1][0] < box_coord[1][0] and coord[1][1] <  box_coord[1][1]) for coord in bbox):
+        #     print(lyr)
+        #     # there are holes inside, check if already something has been subdivided!
+        result = False
+        for p in cell.get_polygons(by_spec = True)[lyr]:
+            box_coord = gdspy.Polygon(p).get_bounding_box()
+            p_holes = any([any((h[0][0] > box_coord[0][0] and h[0][1] >  box_coord[0][1]) and (h[1][0] < box_coord[1][0] and h[1][1] < box_coord[1][1]) for h in bbox)])
+            # print(p_holes)
+            result = (result or p_holes)
+                # print(result)
+                # gdspy.LayoutViewer()
+                # if not all(all(gdspy.inside(h,gdspy.Polygon(p))) for h in holes):
+                #     print('succes')
+                #
+                #     return False
+            # gdspy.LayoutViewer()
+        return result
     return False
 
 def tessellate(cell,i=199, lyr=None):
@@ -54,13 +70,10 @@ def tessellate(cell,i=199, lyr=None):
     if lyr is None:
         layers = cell.get_polygons(by_spec = True)
         for l in layers:
-            i = 33
-            test = hole(cell,l)
-            while test:
+            i = 199
+            while  hole(cell,l):
                 tessellate(cell,i,l)
                 i=i-1
-                print(i)
-                test = hole(cell,l)
         return None
 
     polygons = cell.get_polygons(by_spec=True)[lyr]
@@ -72,9 +85,8 @@ def tessellate(cell,i=199, lyr=None):
 
     cell.remove_polygons(lambda pts, layer, datatype:layer == lyr[0])
     result = gdspy.fast_boolean(bbox, mask, 'and', max_points=i, layer=lyr[0])
-    print(len(result.polygons))
+    # print(len(result.polygons))
     cell.add(result)
-    gdspy.LayoutViewer()
 
 
 
